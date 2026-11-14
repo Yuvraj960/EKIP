@@ -1,0 +1,74 @@
+[project]
+name = "ekip"
+version = "0.1.0"
+description = "Engineering Knowledge Intelligence Platform — an AI assistant that answers developer questions from indexed engineering documents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+# ============================================================
+# DEPENDENCIES
+# ============================================================
+dependencies = [
+    "pydantic>=2.6",              # Data validation and typed models
+    "pydantic-settings>=2.2",     # Load settings from .env files
+    "python-dotenv>=1.0",         # Load .env into environment
+    "langchain>=0.2",             # LangChain core (chains, runnables, loaders)
+    "langchain-community>=0.2",   # Community loaders (PDF, HTML, etc.)
+    "langchain-google-genai>=1.0",# Google Gemini integration for LangChain
+    "langchain-ollama>=1.0",      # Local Ollama LLM and Embeddings integration
+    "chromadb>=0.5",              # Local vector store
+    "pypdf>=4.0",                 # PDF parsing
+    "unstructured>=0.14",         # HTML and mixed-format document parsing
+    "docx2txt>=0.8",              # Word .docx document parsing
+    "langchain-core>=0.2",        # LCEL Runnables and prompt templates
+    "fastapi>=0.111",             # REST API framework
+    "uvicorn[standard]>=0.29",    # ASGI server for FastAPI
+    "streamlit>=1.35",            # Simple chat UI
+    "mcp>=1.0",                   # Model Context Protocol SDK
+    "langsmith>=0.1",             # Tracing, evaluation, and monitoring
+    "deepagents>=0.7.34",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",                # Test runner
+    "pytest-asyncio>=0.23",       # Async test support
+    "pytest-cov>=5.0",            # Coverage reporting
+    "httpx>=0.27",                # Async HTTP client (for testing FastAPI)
+    "ruff>=0.4",                  # Fast linter + formatter
+    "mypy>=1.10",                 # Static type checker
+]
+
+# ============================================================
+# TOOL CONFIGURATION
+# ============================================================
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]   # errors, pyflakes, isort, upgrades, bugbear
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "--tb=short -q"
+
+[tool.mypy]
+python_version = "3.11"
+strict = false              # Gradually enable as codebase matures
+ignore_missing_imports = true
+
+# ============================================================
+# BUILD SYSTEM
+# ============================================================
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app", "mcp_server"]
