@@ -1,0 +1,170 @@
+[
+  {
+    "id": "eval-001",
+    "question": "What is the OAuth2 authentication flow for client applications?",
+    "expected_sources": ["authentication_guide.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-002",
+    "question": "How long is the access token valid and what algorithm signs it?",
+    "expected_sources": ["authentication_guide.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-003",
+    "question": "What is the API key rotation policy and grace period for internal microservices?",
+    "expected_sources": ["authentication_guide.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-004",
+    "question": "What are the allowed deployment windows and days according to the runbook?",
+    "expected_sources": ["deployment_runbook.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-005",
+    "question": "What is the exact command to rollback the backend deployment?",
+    "expected_sources": ["deployment_runbook.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-006",
+    "question": "What is the initial response SLO and update frequency for a SEV-1 incident?",
+    "expected_sources": ["incident_response.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-007",
+    "question": "What are the key incident roles assigned during escalation?",
+    "expected_sources": ["incident_response.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-008",
+    "question": "What is the post-mortem timeline and methodology following an outage?",
+    "expected_sources": ["incident_response.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-009",
+    "question": "What is the standard API rate limit quota per minute?",
+    "expected_sources": ["api_reference.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-010",
+    "question": "What fields are returned in the response of the GET /health endpoint?",
+    "expected_sources": ["api_reference.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "answerable"
+  },
+  {
+    "id": "eval-011",
+    "question": "What is the engineering team's favorite pizza topping in the office?",
+    "expected_sources": [],
+    "expected_evidence_status": "INSUFFICIENT",
+    "question_type": "unanswerable"
+  },
+  {
+    "id": "eval-012",
+    "question": "What is the Wi-Fi password for the guest network in the building?",
+    "expected_sources": [],
+    "expected_evidence_status": "INSUFFICIENT",
+    "question_type": "unanswerable"
+  },
+  {
+    "id": "eval-013",
+    "question": "How do I configure Stripe payment webhook signatures for customer billing?",
+    "expected_sources": [],
+    "expected_evidence_status": "INSUFFICIENT",
+    "question_type": "unanswerable"
+  },
+  {
+    "id": "eval-014",
+    "question": "What is the company policy on annual PTO carryover and rollover?",
+    "expected_sources": [],
+    "expected_evidence_status": "INSUFFICIENT",
+    "question_type": "unanswerable"
+  },
+  {
+    "id": "eval-015",
+    "question": "How much does the primary AWS Kubernetes cluster cost per month in us-east-1?",
+    "expected_sources": [],
+    "expected_evidence_status": "INSUFFICIENT",
+    "question_type": "unanswerable"
+  },
+  {
+    "id": "eval-016",
+    "question": "How do I compile the C++ graphics renderer shaders on Linux?",
+    "expected_sources": [],
+    "expected_evidence_status": "INSUFFICIENT",
+    "question_type": "unanswerable"
+  },
+  {
+    "id": "eval-017",
+    "question": "What is the exact private key size in bits used for the RS256 token signing key?",
+    "expected_sources": ["authentication_guide.md"],
+    "expected_evidence_status": "PARTIAL",
+    "question_type": "ambiguous"
+  },
+  {
+    "id": "eval-018",
+    "question": "What is the rollback procedure for database migrations and how do we resolve MongoDB replica set desynchronization?",
+    "expected_sources": ["deployment_runbook.md"],
+    "expected_evidence_status": "PARTIAL",
+    "question_type": "ambiguous"
+  },
+  {
+    "id": "eval-019",
+    "question": "What exact 5xx error rate percentage triggers a SEV-2 incident escalation?",
+    "expected_sources": ["incident_response.md"],
+    "expected_evidence_status": "PARTIAL",
+    "question_type": "ambiguous"
+  },
+  {
+    "id": "eval-020",
+    "question": "What cursor pagination query parameters does the POST /ask endpoint accept?",
+    "expected_sources": ["api_reference.md"],
+    "expected_evidence_status": "PARTIAL",
+    "question_type": "ambiguous"
+  },
+  {
+    "id": "eval-021",
+    "question": "Create a checklist for executing a deployment rollback based on the runbook",
+    "expected_sources": ["deployment_runbook.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "action"
+  },
+  {
+    "id": "eval-022",
+    "question": "Draft an incident response checklist for a critical SEV-1 outage",
+    "expected_sources": ["incident_response.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "action"
+  },
+  {
+    "id": "eval-023",
+    "question": "Draft a checklist for rotating internal service-to-service API keys",
+    "expected_sources": ["authentication_guide.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "action"
+  },
+  {
+    "id": "eval-024",
+    "question": "Create a checklist for pre-deployment verification steps",
+    "expected_sources": ["deployment_runbook.md"],
+    "expected_evidence_status": "SUFFICIENT",
+    "question_type": "action"
+  }
+]

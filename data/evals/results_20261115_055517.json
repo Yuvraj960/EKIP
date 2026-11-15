@@ -1,0 +1,411 @@
+{
+  "metrics": {
+    "total_queries": 24,
+    "passed_queries": 23,
+    "overall_pass_rate": 95.8,
+    "answerable_accuracy": 100.0,
+    "unanswerable_safety": 100.0,
+    "source_match_rate": 95.8,
+    "average_latency_sec": 14.75
+  },
+  "results": [
+    {
+      "id": "eval-001",
+      "question": "What is the OAuth2 authentication flow for client applications?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "authentication_guide.md"
+      ],
+      "cited_sources": [
+        "authentication_guide.md"
+      ],
+      "source_match": true,
+      "latency_sec": 6.231,
+      "passed": true,
+      "answer_snippet": "The OAuth2 authentication flow for client applications uses the Authorization Code Grant with PKCE (Proof Key for Code E"
+    },
+    {
+      "id": "eval-002",
+      "question": "How long is the access token valid and what algorithm signs it?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "authentication_guide.md"
+      ],
+      "cited_sources": [
+        "authentication_guide.md"
+      ],
+      "source_match": true,
+      "latency_sec": 4.811,
+      "passed": true,
+      "answer_snippet": "The access token is valid for 60 minutes (3600 seconds) and is signed using the RS256 algorithm."
+    },
+    {
+      "id": "eval-003",
+      "question": "What is the API key rotation policy and grace period for internal microservices?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "authentication_guide.md"
+      ],
+      "cited_sources": [
+        "authentication_guide.md"
+      ],
+      "source_match": true,
+      "latency_sec": 4.199,
+      "passed": true,
+      "answer_snippet": "Internal microservices are required to rotate their API keys every 90 days. During the rotation process, old keys remain"
+    },
+    {
+      "id": "eval-004",
+      "question": "What are the allowed deployment windows and days according to the runbook?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "deployment_runbook.md"
+      ],
+      "cited_sources": [
+        "deployment_runbook.md"
+      ],
+      "source_match": true,
+      "latency_sec": 4.301,
+      "passed": true,
+      "answer_snippet": "The allowed deployment window is Tuesday through Thursday, from 10:00 AM to 3:00 PM UTC. Deployments on Friday are permi"
+    },
+    {
+      "id": "eval-005",
+      "question": "What is the exact command to rollback the backend deployment?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "deployment_runbook.md"
+      ],
+      "cited_sources": [
+        "deployment_runbook.md"
+      ],
+      "source_match": true,
+      "latency_sec": 4.914,
+      "passed": true,
+      "answer_snippet": "The exact command to rollback the backend deployment is `ekip-deploy rollback --service ekip-backend --target previous`."
+    },
+    {
+      "id": "eval-006",
+      "question": "What is the initial response SLO and update frequency for a SEV-1 incident?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "incident_response.md"
+      ],
+      "cited_sources": [
+        "incident_response.md"
+      ],
+      "source_match": true,
+      "latency_sec": 7.067,
+      "passed": true,
+      "answer_snippet": "For a SEV-1 incident, the initial response SLO is 5 minutes, and the update frequency is every 15 minutes."
+    },
+    {
+      "id": "eval-007",
+      "question": "What are the key incident roles assigned during escalation?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "incident_response.md"
+      ],
+      "cited_sources": [
+        "incident_response.md"
+      ],
+      "source_match": true,
+      "latency_sec": 21.863,
+      "passed": true,
+      "answer_snippet": "During the incident escalation workflow, three key roles are assigned: the Incident Commander (IC), who manages triage, "
+    },
+    {
+      "id": "eval-008",
+      "question": "What is the post-mortem timeline and methodology following an outage?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "incident_response.md"
+      ],
+      "cited_sources": [
+        "incident_response.md"
+      ],
+      "source_match": true,
+      "latency_sec": 9.778,
+      "passed": true,
+      "answer_snippet": "For SEV-1 and SEV-2 incidents, a blameless post-mortem must be conducted within 3 business days. The methodology involve"
+    },
+    {
+      "id": "eval-009",
+      "question": "What is the standard API rate limit quota per minute?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "api_reference.md"
+      ],
+      "cited_sources": [
+        "api_reference.md"
+      ],
+      "source_match": true,
+      "latency_sec": 27.55,
+      "passed": true,
+      "answer_snippet": "The standard API rate limit quota is 100 requests per minute per IP."
+    },
+    {
+      "id": "eval-010",
+      "question": "What fields are returned in the response of the GET /health endpoint?",
+      "question_type": "answerable",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "api_reference.md"
+      ],
+      "cited_sources": [
+        "api_reference.md"
+      ],
+      "source_match": true,
+      "latency_sec": 22.828,
+      "passed": true,
+      "answer_snippet": "The GET /health endpoint returns the following fields: status, version, chroma, and gemini_api."
+    },
+    {
+      "id": "eval-011",
+      "question": "What is the engineering team's favorite pizza topping in the office?",
+      "question_type": "unanswerable",
+      "expected_status": "INSUFFICIENT",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 7.783,
+      "passed": true,
+      "answer_snippet": "The provided documentation does not contain information regarding the engineering team's favorite pizza topping."
+    },
+    {
+      "id": "eval-012",
+      "question": "What is the Wi-Fi password for the guest network in the building?",
+      "question_type": "unanswerable",
+      "expected_status": "INSUFFICIENT",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 7.783,
+      "passed": true,
+      "answer_snippet": "The provided documentation does not contain information regarding the Wi-Fi password for the guest network."
+    },
+    {
+      "id": "eval-013",
+      "question": "How do I configure Stripe payment webhook signatures for customer billing?",
+      "question_type": "unanswerable",
+      "expected_status": "INSUFFICIENT",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 7.986,
+      "passed": true,
+      "answer_snippet": "The provided documentation does not contain information regarding the configuration of Stripe payment webhook signatures"
+    },
+    {
+      "id": "eval-014",
+      "question": "What is the company policy on annual PTO carryover and rollover?",
+      "question_type": "unanswerable",
+      "expected_status": "INSUFFICIENT",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 10.447,
+      "passed": true,
+      "answer_snippet": "The provided documentation does not contain information regarding company policy on annual PTO carryover and rollover."
+    },
+    {
+      "id": "eval-015",
+      "question": "How much does the primary AWS Kubernetes cluster cost per month in us-east-1?",
+      "question_type": "unanswerable",
+      "expected_status": "INSUFFICIENT",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 11.058,
+      "passed": true,
+      "answer_snippet": "The provided documentation does not contain information regarding the monthly cost of the primary AWS Kubernetes cluster"
+    },
+    {
+      "id": "eval-016",
+      "question": "How do I compile the C++ graphics renderer shaders on Linux?",
+      "question_type": "unanswerable",
+      "expected_status": "INSUFFICIENT",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 10.199,
+      "passed": true,
+      "answer_snippet": "The provided documentation does not contain information regarding how to compile C++ graphics renderer shaders on Linux."
+    },
+    {
+      "id": "eval-017",
+      "question": "What is the exact private key size in bits used for the RS256 token signing key?",
+      "question_type": "ambiguous",
+      "expected_status": "PARTIAL",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "authentication_guide.md"
+      ],
+      "cited_sources": [
+        "authentication_guide.md"
+      ],
+      "source_match": true,
+      "latency_sec": 17.656,
+      "passed": true,
+      "answer_snippet": "The provided documentation does not specify the exact private key size in bits for the RS256 token signing key. It only "
+    },
+    {
+      "id": "eval-018",
+      "question": "How do I rollback a MongoDB sharded replica cluster migration?",
+      "question_type": "ambiguous",
+      "expected_status": "PARTIAL",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "deployment_runbook.md"
+      ],
+      "cited_sources": [],
+      "source_match": false,
+      "latency_sec": 10.0,
+      "passed": false,
+      "answer_snippet": "The provided documentation does not contain information regarding the rollback of a MongoDB sharded replica cluster migr"
+    },
+    {
+      "id": "eval-019",
+      "question": "What exact 5xx error rate percentage triggers a SEV-2 incident escalation?",
+      "question_type": "ambiguous",
+      "expected_status": "PARTIAL",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "incident_response.md"
+      ],
+      "cited_sources": [
+        "incident_response.md"
+      ],
+      "source_match": true,
+      "latency_sec": 13.038,
+      "passed": true,
+      "answer_snippet": "The provided documentation does not specify an exact 5xx error rate percentage for triggering a SEV-2 incident escalatio"
+    },
+    {
+      "id": "eval-020",
+      "question": "What cursor pagination query parameters does the POST /ask endpoint accept?",
+      "question_type": "ambiguous",
+      "expected_status": "PARTIAL",
+      "actual_status": "INSUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "api_reference.md"
+      ],
+      "cited_sources": [
+        "api_reference.md"
+      ],
+      "source_match": true,
+      "latency_sec": 13.721,
+      "passed": true,
+      "answer_snippet": "The provided documentation does not contain information regarding cursor pagination query parameters for the POST /ask e"
+    },
+    {
+      "id": "eval-021",
+      "question": "Create a checklist for executing a deployment rollback based on the runbook",
+      "question_type": "action",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "deployment_runbook.md"
+      ],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 31.232,
+      "passed": true,
+      "answer_snippet": "[{'type': 'text', 'text': 'This is a **DRAFT** checklist for executing a deployment rollback, based on the `deployment_r"
+    },
+    {
+      "id": "eval-022",
+      "question": "Draft an incident response checklist for a critical SEV-1 outage",
+      "question_type": "action",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "incident_response.md"
+      ],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 34.92,
+      "passed": true,
+      "answer_snippet": "[{'type': 'text', 'text': \"This is a **DRAFT** incident response checklist for a SEV-1 outage, based on the EKIP enginee"
+    },
+    {
+      "id": "eval-023",
+      "question": "Draft a checklist for rotating internal service-to-service API keys",
+      "question_type": "action",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "authentication_guide.md"
+      ],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 30.38,
+      "passed": true,
+      "answer_snippet": "[{'type': 'text', 'text': \"This is a **DRAFT** checklist for rotating internal service-to-service API keys, based on the"
+    },
+    {
+      "id": "eval-024",
+      "question": "Create a checklist for pre-deployment verification steps",
+      "question_type": "action",
+      "expected_status": "SUFFICIENT",
+      "actual_status": "SUFFICIENT",
+      "status_match": true,
+      "expected_sources": [
+        "deployment_runbook.md"
+      ],
+      "cited_sources": [],
+      "source_match": true,
+      "latency_sec": 34.371,
+      "passed": true,
+      "answer_snippet": "[{'type': 'text', 'text': 'This is a **DRAFT** checklist for pre-deployment verification, based on the `deployment_runbo"
+    }
+  ]
+}
