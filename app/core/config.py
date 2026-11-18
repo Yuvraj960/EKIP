@@ -74,6 +74,7 @@ class Settings(BaseSettings):
         api_host: Host interface for FastAPI server.
         api_port: Port number for FastAPI server.
         log_level: Logging severity level (e.g. INFO, DEBUG).
+        uploaded_docs_dir: Local directory for unpacked uploaded documents.
     """
 
     model_config = SettingsConfigDict(
@@ -106,6 +107,7 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     log_level: str = "INFO"
+    uploaded_docs_dir: str = "./data/uploaded_docs"
 
     @model_validator(mode="before")
     @classmethod

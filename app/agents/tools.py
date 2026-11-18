@@ -3,7 +3,7 @@
 Provides read-only and draft-only tools for the agent:
     1. search_runbook: Queries indexed engineering docs and returns formatted context.
     2. draft_checklist: Drafts a structured markdown checklist based on retrieved context.
-    
+
 Usage:
     from app.agents.tools import search_runbook, draft_checklist
     context = search_runbook.invoke({"query": "rollback"})
