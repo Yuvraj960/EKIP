@@ -23,7 +23,7 @@ from app.core.tracing import (
     add_trace_tags,
 )
 from app.ingestion.chunker import chunk_documents
-from app.ingestion.indexer import index_documents
+from app.ingestion.indexer import get_vector_store, index_documents
 from app.ingestion.loaders import load_documents
 
 
@@ -33,11 +33,19 @@ from app.ingestion.loaders import load_documents
     tags=[TAG_EKIP, TAG_INGESTION, "pipeline"],
     metadata={META_MODULE: "app.ingestion.run_ingest", META_LAYER: "ingestion"},
 )
-def run_ingestion_pipeline(folder_path: Path) -> tuple[int, int]:
+def run_ingestion_pipeline(
+    folder_path: Path,
+    persist_dir: str | None = None,
+    collection_name: str | None = None,
+    archive_name: str | None = None,
+) -> tuple[int, int]:
     """Execute the full ingestion pipeline: load, chunk, and index.
 
     Args:
         folder_path: Directory path containing documents to index.
+        persist_dir: Optional Chroma persistence directory override.
+        collection_name: Optional Chroma collection name override.
+        archive_name: Optional archive name to enrich chunk metadata.
 
     Returns:
         Tuple of (loaded_documents_count, indexed_chunks_count).
@@ -53,7 +61,16 @@ def run_ingestion_pipeline(folder_path: Path) -> tuple[int, int]:
         return 0, 0
 
     chunks = chunk_documents(docs)
-    indexed_count = index_documents(chunks)
+    if archive_name:
+        for chunk in chunks:
+            chunk.metadata["archive_name"] = archive_name
+
+    store = (
+        get_vector_store(persist_dir=persist_dir, collection_name=collection_name)
+        if (persist_dir or collection_name)
+        else None
+    )
+    indexed_count = index_documents(chunks, store=store)
 
     add_trace_tags([f"docs:{len(docs)}", f"chunks:{indexed_count}"])
     add_trace_metadata(
@@ -61,6 +78,7 @@ def run_ingestion_pipeline(folder_path: Path) -> tuple[int, int]:
             "docs_count": len(docs),
             META_CHUNKS_COUNT: indexed_count,
             "folder": str(folder_path),
+            "archive": archive_name or "",
         }
     )
     return len(docs), indexed_count
