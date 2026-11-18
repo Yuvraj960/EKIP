@@ -65,3 +65,40 @@ def test_retrieve_chunks_passes_top_k() -> None:
         "test",
         k=7,
     )
+
+
+def test_retrieve_chunks_multi_subdatabase(tmp_path: MagicMock) -> None:
+    """Verify aggregation across partitioned sub-database directories."""
+    from unittest.mock import patch
+
+    doc_a = Document(page_content="Archive A", metadata={"source": "a.md"})
+    doc_b = Document(page_content="Archive B", metadata={"source": "b.md"})
+
+    store_a = MagicMock(spec=Chroma)
+    store_a.similarity_search_with_relevance_scores.return_value = [(doc_a, 0.90)]
+
+    store_b = MagicMock(spec=Chroma)
+    store_b.similarity_search_with_relevance_scores.return_value = [(doc_b, 0.75)]
+
+    def mock_get_store(
+        persist_dir: str | None = None,
+        collection_name: str | None = None,
+    ) -> Chroma:
+        if collection_name == "db1":
+            return store_a
+        return store_b
+
+    with (
+        patch(
+            "app.retrieval.retriever._get_sub_database_paths",
+            return_value=[tmp_path / "db1", tmp_path / "db2"],
+        ),
+        patch("app.retrieval.retriever.get_vector_store", side_effect=mock_get_store),
+    ):
+        results = retrieve_chunks("multi-query", top_k=5, min_score=0.5)
+
+    assert len(results) == 2
+    assert results[0].page_content == "Archive A"
+    assert results[0].metadata["score"] == 0.90
+    assert results[1].page_content == "Archive B"
+    assert results[1].metadata["score"] == 0.75

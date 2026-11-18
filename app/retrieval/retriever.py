@@ -1,12 +1,14 @@
 """app.retrieval.retriever — ChromaDB chunk retriever.
 
-Queries the ChromaDB vector store with an embedding of the user's question,
+Queries partitioned ChromaDB sub-databases with an embedding of the user's question,
 scores chunk relevance, and returns documents exceeding the minimum score threshold.
 
 Usage:
     from app.retrieval.retriever import retrieve_chunks
     chunks = retrieve_chunks("authentication flow")
 """
+
+from pathlib import Path
 
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
@@ -23,7 +25,56 @@ from app.core.tracing import (
     add_trace_metadata,
     add_trace_tags,
 )
+from app.ingestion.archive_manager import CHROMA_SQLITE_FILE
 from app.ingestion.indexer import get_vector_store
+
+
+def _get_sub_database_paths(root: Path) -> list[Path]:
+    """Return all existing Chroma sub-database directories containing chroma.sqlite3.
+
+    Args:
+        root: Root directory of Chroma persistence.
+
+    Returns:
+        List of Path objects for active sub-database directories.
+    """
+    if not root.exists():
+        return []
+    return [d for d in root.iterdir() if d.is_dir() and (d / CHROMA_SQLITE_FILE).exists()]
+
+
+def _query_candidates(
+    clean_query: str,
+    limit: int,
+    store: Chroma | None,
+) -> list[tuple[Document, float]]:
+    """Query either provided store, active sub-databases, or fallback store.
+
+    Args:
+        clean_query: Stripped question string.
+        limit: Candidate retrieval limit per store.
+        store: Optional explicitly provided Chroma store instance.
+
+    Returns:
+        Aggregated list of (Document, score) tuples sorted by score descending.
+    """
+    if store is not None:
+        return store.similarity_search_with_relevance_scores(clean_query, k=limit)
+
+    root = Path(settings.chroma_persist_dir)
+    sub_dbs = _get_sub_database_paths(root)
+    if sub_dbs:
+        aggregated: list[tuple[Document, float]] = []
+        for sub_db in sub_dbs:
+            sub_store = get_vector_store(persist_dir=str(sub_db), collection_name=sub_db.name)
+            aggregated.extend(
+                sub_store.similarity_search_with_relevance_scores(clean_query, k=limit)
+            )
+        aggregated.sort(key=lambda item: item[1], reverse=True)
+        return aggregated
+
+    default_store = get_vector_store()
+    return default_store.similarity_search_with_relevance_scores(clean_query, k=limit)
 
 
 @traceable(
@@ -59,12 +110,8 @@ def retrieve_chunks(
 
     limit = top_k if top_k is not None else settings.retrieval_top_k
     threshold = min_score if min_score is not None else settings.retrieval_min_score
-    vector_store = store if store is not None else get_vector_store()
 
-    candidates = vector_store.similarity_search_with_relevance_scores(
-        clean_query,
-        k=limit,
-    )
+    candidates = _query_candidates(clean_query, limit, store)
 
     filtered_chunks: list[Document] = []
     for doc, score in candidates:
@@ -74,6 +121,8 @@ def retrieve_chunks(
             filtered_chunks.append(
                 Document(page_content=doc.page_content, metadata=enriched_metadata)
             )
+        if len(filtered_chunks) >= limit:
+            break
 
     add_trace_tags([f"chunks_found:{len(filtered_chunks)}"])
     add_trace_metadata(
