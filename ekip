@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -e
+
+# 1. Verify uv package manager is available
+if ! command -v uv &> /dev/null; then
+    echo "[EKIP] 'uv' package manager not found. Attempting install via pip..."
+    python3 -m pip install uv || {
+        echo "[EKIP] Error: Please install 'uv' from https://astral.sh/uv"
+        exit 1
+    }
+fi
+
+# 2. Auto-bootstrap virtual environment and dependencies on clean clone
+if [ ! -d ".venv" ]; then
+    echo "[EKIP] Fresh repository detected. Bootstrapping virtual environment and dependencies..."
+    uv sync --extra dev
+    echo "[EKIP] Environment initialized successfully."
+fi
+
+# 3. Auto-create .env from template if missing
+if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+    echo "[EKIP] Generating .env from .env.example template..."
+    cp .env.example .env
+    echo "[EKIP] Note: Please update GOOGLE_API_KEY in .env for live Gemini operations."
+fi
+
+# 4. Dispatch command to unified CLI
+exec uv run ekip "$@"
