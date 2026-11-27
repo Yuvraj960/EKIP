@@ -1,6 +1,6 @@
 [project]
 name = "ekip"
-version = "0.1.0"
+version = "3.0.0"
 description = "Engineering Knowledge Intelligence Platform — an AI assistant that answers developer questions from indexed engineering documents."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -39,6 +39,9 @@ dev = [
     "ruff>=0.4",                  # Fast linter + formatter
     "mypy>=1.10",                 # Static type checker
 ]
+
+[project.scripts]
+ekip = "app.cli:main"
 
 # ============================================================
 # TOOL CONFIGURATION
