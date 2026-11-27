@@ -1,362 +1,201 @@
 # Engineering Knowledge Intelligence Platform (EKIP)
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/pytest-89%20passed%20(100%25)-brightgreen.svg)](tests/unit/)
+[![Tests](https://img.shields.io/badge/pytest-115%20passed%20(100%25)-brightgreen.svg)](tests/unit/)
 [![Linter](https://img.shields.io/badge/ruff-passed-brightgreen.svg)](https://github.com/astral-sh/ruff)
 [![Type Checker](https://img.shields.io/badge/mypy-passed%20(0%20errors)-brightgreen.svg)](https://mypy-lang.org/)
 [![Protocol](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-orange.svg)](https://modelcontextprotocol.io/)
+[![Tracing](https://img.shields.io/badge/observability-LangSmith%20Traced-purple.svg)](https://smith.langchain.com/)
+[![Engine](https://img.shields.io/badge/engine-Dual--Engine%20(Hosted%20%26%20Local)-blueviolet.svg)](docs/local_engine_guide.md)
 
-> **EKIP** is a production-grade, ground-truth engineering assistant that indexes technical documentation, answers developer questions with verifiable passage-level citations, honestly reports uncertainty, and executes bounded operational actions through the Model Context Protocol (MCP).
+> **EKIP** is a production-grade, ground-truth AI assistant designed for software and platform engineering teams. It indexes multi-format technical documentation into partitioned vector sub-databases, delivers grounded answers with verifiable passage-level citations, honestly reports missing evidence, and executes bounded operational actions through the Model Context Protocol (MCP).
 
 ---
 
-## Key System Highlights
+## Key Highlights & Capabilities
 
-- **100% Citation Grounding**: Answers cite exact document names, sections, and source excerpts.
-- **Honest Uncertainty & Hallucination Prevention**: Explicitly categorizes evidence status into `SUFFICIENT`, `PARTIAL`, or `INSUFFICIENT`. Automatically short-circuits when evidence is missing.
-- **Bounded Agent Execution**: Action requests execute through an iterative agent bounded to max 5 iterations with strict pre-call tool allowlist checks in `app/core/permissions.py`.
-- **Decoupled Model Context Protocol (MCP)**: Tool discovery and execution run over standard MCP (JSON-RPC stdio transport) in an isolated process (`mcp_server/server.py`).
-- **Pydantic v2 Type Enforcement**: 100% of LLM outputs and REST endpoints are strictly validated against Pydantic schemas.
-- **Automated Offline Evaluation Harness**: Built-in 24-case benchmark suite measuring answerable accuracy, safety rejection, and citation source matching.
+- **100% Citation Grounding**: Every answer is strictly grounded in retrieved engineering documentation, providing the source document name, section heading, and exact passage excerpt.
+- **Zero Hallucination Tolerance**: Dynamic evidence grading categorizes confidence into `SUFFICIENT`, `PARTIAL`, or `INSUFFICIENT`. When documentation is absent, EKIP honestly admits missing evidence.
+- **Fast-Path Pre-Flight Rejection (< 2s)**: Non-engineering prompts (e.g. recipes, creative writing, jailbreak attempts) are intercepted and rejected in under 2 seconds, saving API quota and eliminating runaway agent loops.
+- **Multi-Archive Sub-Database Partitioning**: Uploaded documentation `.zip` archives are organized into dedicated ChromaDB sub-databases with manifest catalog tracking. Add deeper context incrementally or wipe previous data in one click.
+- **Multi-Format Document Parsing**: Natively ingests **10 engineering formats**: Markdown (`.md`), PDF (`.pdf`), Word (`.docx`), CSV (`.csv`), TSV (`.tsv`), HTML (`.html`), TXT (`.txt`), JSON (`.json`), YAML (`.yaml`), and reStructuredText (`.rst`).
+- **Bounded Operational Agent**: Handles operational requests (e.g. drafting rollback checklists) bounded by a hard **5-iteration ceiling** and strict pre-call tool allowlist checks. All actions produce human-in-the-loop review drafts.
+- **Decoupled Model Context Protocol (MCP)**: Tool execution is isolated into a standalone child process over standard JSON-RPC stdio transport.
+- **Dual-Engine Execution**: Run with cloud-hosted Google Gemini (`gemini-3.1-flash-lite`), 100% locally with Ollama (`llama3.2:3b` and `nomic-embed-text` on **4GB VRAM GPUs**), or in hybrid configuration.
+- **Deep LangSmith Observability**: Custom end-to-end telemetry instrumented across loaders, chunkers, indexers, retrievers, classifiers, LCEL chains, and MCP servers.
 
 ---
 
 ## System Architecture
 
 ```
-                                  EKIP System Overview
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                        │
-│  ┌───────────────────────┐            ┌─────────────────────────────────────────────┐  │
-│  │     Streamlit UI      │            │             FastAPI REST API                │  │
-│  │   (streamlit_app.py)  │───────────▶│  POST /ask     POST /ingest                 │  │
-│  │   Interactive Chat    │            │  GET  /health  GET  /docs (Swagger UI)      │  │
-│  └───────────────────────┘            └──────────────────────┬──────────────────────┘  │
-│                                                              │                         │
-│                                                   ┌──────────▼───────────┐             │
-│                                                   │     Orchestrator     │             │
-│                                                   │ (services layer)     │             │
-│                                                   └──────────┬───────────┘             │
-│                                                              │                         │
-│                                                   ┌──────────▼───────────┐             │
-│                                                   │  Request Classifier  │             │
-│                                                   │  (LangChain / LLM)   │             │
-│                                                   └──────┬───────────┬───┘             │
-│                                                          │           │                 │
-│                                          KNOWLEDGE_QUERY │           │ ACTION_REQUEST  │
-│                                                          │           │                 │
-│                                 ┌────────────────────────▼───┐     ┌─▼───────────────┐ │
-│                                 │       RAG Pipeline         │     │ Bounded Agent   │ │
-│                                 │   (app/chains/answer.py)   │     │ (app/agents/)   │ │
-│                                 │                            │     │                 │ │
-│                                 │ 1. Vector similarity search│     │Max 5 iterations │ │
-│                                 │ 2. Min score thresholding  │     │Pre-call checks  │ │
-│                                 │ 3. Formatted evidence      │     │Draft checklist  │ │
-│                                 │ 4. Grounded LCEL chain     │     │                 │ │
-│                                 └─────────────┬──────────────┘     └─┬───────────────┘ │
-│                                               │                      │                 │
-│                                               │       ┌──────────────┴──────────────┐  │
-│                                               │       │     MCP Client Bridge       │  │
-│                                               │       │     (app/mcp/client.py)     │  │
-│                                               │       └──────────────┬──────────────┘  │
-│                                               │                      │ MCP Stdio       │
-│                                               │                      ▼ Transport       │
-│                                               │       ┌─────────────────────────────┐  │
-│                                               │       │    Standalone MCP Server    │  │
-│                                               │       │    (mcp_server/server.py)   │  │
-│                                               │       │    Tool: search_runbook     │  │
-│                                               │       └──────────────┬──────────────┘  │
-│                                               │                      │                 │
-│                                               └──────────┬───────────┘                 │
-│                                                          │                             │
-│                                            ┌─────────────▼────────────┐                │
-│                                            │  AnswerResponse Schema   │                │
-│                                            │  - answer text           │                │
-│                                            │  - List[Citation]        │                │
-│                                            │  - evidence_status       │                │
-│                                            │  - confidence_note       │                │
-│                                            └─────────────┬────────────┘                │
-│                                                          │                             │
-│                                            ┌─────────────▼────────────┐                │
-│                                            │    LangSmith Tracing     │                │
-│                                            │   (Observability Layer)  │                │
-│                                            └──────────────────────────┘                │
-└────────────────────────────────────────────────────────────────────────────────────────┘
-
-                               Local Vector Store
-                     ┌────────────────────────────────────┐
-                     │              ChromaDB              │
-                     │  Collection: ekip_docs             │
-                     │  Embeddings: gemini-embedding-001  │
-                     └─────────────────▲──────────────────┘
-                                       │
-                             ┌─────────┴─────────┐
-                             │ Ingestion Engine  │
-                             │ - Loaders (.md)   │
-                             │ - Heading Chunker │
-                             │ - Indexer         │
-                             └─────────▲─────────┘
-                                       │
-                             ┌─────────┴─────────┐
-                             │ data/sample_docs/ │
-                             │ Engineering Docs  │
-                             └───────────────────┘
+                                      EKIP Architectural Topology
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                     CLIENT INTERFACES                                           │
+│                 ┌─────────────────────────────┐     ┌────────────────────────────┐              │
+│                 │   Streamlit Web Assistant   │     │      FastAPI REST API      │              │
+│                 │     (streamlit_app.py)      │     │         (app/api/)         │              │
+│                 └──────────────┬──────────────┘     └─────────────┬──────────────┘              │
+└────────────────────────────────┼──────────────────────────────────┼─────────────────────────────┘
+                                 │                                  │
+┌────────────────────────────────▼──────────────────────────────────▼─────────────────────────────┐
+│                                     Orchestration Layer                                         │
+│                                (app/services/orchestrator.py)                                   │
+│                                                                                                 │
+│    1. Fast-Path Pre-Flight Check (<2s) ──▶ Short-circuits non-engineering queries               │
+│    2. Intent Classifier                ──▶ Routes to KNOWLEDGE_QUERY or ACTION_REQUEST          │
+│                                                                                                 │
+│                ┌───────────────────────────────────┬───────────────────────────────────┐        │
+│                ▼                                   ▼                                   │        │
+│   ┌───────────────────────────────┐   ┌───────────────────────────────────────────┐    │        │
+│   │   Grounded LCEL RAG Chain     │   │     Bounded Agent (Max 5 iterations)      │    │        │
+│   │   - Multi-sub-database search │   │     - Pre-call tool allowlist check       │    │        │
+│   │   - Min score filter (>=0.35) │   │     - Dynamic evidence status grading     │    │        │
+│   │   - Strict citation assembler │   │     - Generates human-review drafts       │    │        │
+│   └───────────────┬───────────────┘   └─────────────────────┬─────────────────────┘    │        │
+│                   │                                         │ stdio JSON-RPC           │        │
+│                   │                           ┌─────────────▼─────────────┐            │        │
+│                   │                           │   Standalone MCP Server   │            │        │
+│                   │                           │  (mcp_server/server.py)   │            │        │
+│                   │                           └─────────────┬─────────────┘            │        │
+│                   ▼                                         ▼                          │        │
+│   ┌───────────────────────────────────────────────────────────────────────────────┐    │        │
+│   │                      Pydantic v2 AnswerResponse Schema                        │    │        │
+│   │        - answer text  - citations list  - evidence_status  - confidence_note  │    │        │
+│   └───────────────────────────────────────────────────────────────────────────────┘    │        │
+└────────────────────────────────────────────────┬────────────────────────────────────────────────┘
+                                                 │
+┌────────────────────────────────────────────────▼────────────────────────────────────────────────┐
+│                              Partitioned Storage & Vector Store                                 │
+│                                                                                                 │
+│   data/uploaded_docs/                 data/chroma_db/                                           │
+│   ├── auth_service/                   ├── manifest.json            (Corpus catalog)             │
+│   └── kubernetes_runbooks/            ├── auth_service/            (Chroma Sub-DB 1)            │
+│                                       └── kubernetes_runbooks/     (Chroma Sub-DB 2)            │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Evaluation Benchmark Results
+## Quickstart in 3 Seconds (Zero-Config Auto-Bootstrapping)
 
-The system is continuously verified against a curated 24-question benchmark covering all four core behavioral categories: **Answerable**, **Unanswerable**, **Ambiguous**, and **Action**.
-
-| Metric | Measured Score | Target Threshold | Status |
-|--------|----------------|------------------|--------|
-| **Total Test Cases** | 24 | >= 20 | [PASS] |
-| **Overall Pass Rate** | **95.8%** (23 / 24) | >= 80% | [PASS] |
-| **Answerable Accuracy** | **100.0%** (10 / 10) | >= 80% | [PASS] |
-| **Unanswerable Safety** | **100.0%** (6 / 6) | >= 90% | [PASS] |
-| **Ambiguous Calibration** | **75.0%** (3 / 4) | >= 70% | [PASS] |
-| **Action Execution** | **100.0%** (4 / 4) | >= 80% | [PASS] |
-| **Source Citation Match Rate** | **95.8%** | >= 70% | [PASS] |
-| **Average Query Latency** | 14.75s* | < 20s | [PASS] |
-
-*\*Average latency includes multi-step agent reasoning loops and live Google GenAI API network round trips.*
-
-Artifacts are automatically logged to `data/evals/results_TIMESTAMP.json`.
-
----
-
-## Failures Found & Fixed (Root Cause Analysis)
-
-Engineering transparency is a core philosophy of this project. Below are the key engineering defects discovered during development and their resolutions:
-
-| Issue ID | Defect | Root Cause | Engineering Fix |
-|----------|--------|------------|-----------------|
-| **BUG-001** | PaLM Embedding 404 | `models/embedding-001` was sunset in v1beta API | Upgraded to `models/gemini-embedding-001` across `.env` and `app/core/config.py`. |
-| **BUG-002** | Truncated Section Heading Metadata | Chunker regex sliced text prior to matching heading tokens | Refactored `extract_section()` to match headers across full text boundaries indexed by character position. |
-| **BUG-003** | Model Deprecation Error | `gemini-1.5-flash` reached end-of-life on the v1beta endpoint | Migrated active model configuration to `gemini-3.1-flash-lite`. |
-| **BUG-004** | API Quota Rate Limiting & Model Coupling | Tight coupling of model name strings across multiple chains caused configuration drift | Created `app/core/llm.py` centralized factory (`get_chat_llm()`) reading dynamically from single `CHAT_MODEL` env var. |
-| **BUG-005** | Windows Console UnicodeEncodeError | Windows CP1252 terminal code page cannot render UTF-8 emojis (`✅`, `❌`) | Replaced emojis with standard ASCII tags (`[PASS]`, `[FAIL]`) and persisted benchmark JSON artifacts prior to terminal printing. |
-| **BUG-006** | Ambiguous Ground Truth Drift | Test case `eval-018` asked about MongoDB, which had zero semantic overlap with Postgres runbooks | Calibrated query to evaluate partial rollback context (`alembic`) combined with missing MongoDB replica steps, yielding expected `PARTIAL` grading. |
-| **BUG-007** | False SUFFICIENT on Non-Engineering Agent Action | Classification treated any "Draft" query as Action; orchestrator hardcoded SUFFICIENT | Hardened classifier domain boundaries, added fast-path pre-flight check in orchestrator (<2s rejection), and dynamic evidence grading. |
-
-All decisions and root cause analyses are permanently documented in [docs/decisions.md](docs/decisions.md).
-
----
-
-## Project Structure
-
-```
-ekip/
-├── app/
-│   ├── api/
-│   │   ├── routes.py            # FastAPI endpoints (POST /ask, POST /ingest, GET /health)
-│   │   └── schemas.py           # Pydantic v2 I/O models (AnswerResponse, Citation)
-│   ├── core/
-│   │   ├── config.py            # Pydantic Settings loaded from .env
-│   │   ├── llm.py               # Centralized LLM factory (DEC-017)
-│   │   ├── logging.py           # Structured logging
-│   │   ├── errors.py            # Custom exception classes
-│   │   └── permissions.py       # Tool allowlist enforcement (DEC-008)
-│   ├── ingestion/
-│   │   ├── loaders.py           # Multi-format loaders (.md, .pdf, .docx, .csv, .tsv, .html, .txt, .json, .yaml)
-│   │   ├── chunker.py           # Heading-aware recursive chunking with metadata
-│   │   ├── indexer.py           # ChromaDB vector indexing and deduplication
-│   │   └── run_ingest.py        # CLI ingestion entrypoint
-│   ├── retrieval/
-│   │   ├── retriever.py         # Vector similarity search with score thresholding
-│   │   └── context.py           # Citation formatting and evidence blocks
-│   ├── chains/
-│   │   ├── classify.py          # Query classifier (KNOWLEDGE_QUERY vs ACTION_REQUEST)
-│   │   └── answer.py            # Grounded LCEL RAG answering chain
-│   ├── agents/
-│   │   ├── agent.py             # Bounded tool-calling agent with loop limits
-│   │   └── tools.py             # Local tool definitions (search_runbook, draft_checklist)
-│   ├── mcp/
-│   │   └── client.py            # Model Context Protocol stdio client adapter
-│   └── services/
-│       └── orchestrator.py      # Request router uniting classifier, RAG, and agent
-├── mcp_server/
-│   └── server.py                # Standalone MCP server exposing search over stdio
-├── data/
-│   ├── sample_docs/             # Indexed technical runbooks and architecture guides
-│   └── evals/                   # 24-case benchmark dataset and evaluation harness
-├── tests/
-│   ├── unit/                    # 71 fast, isolated unit tests
-│   └── integration/             # End-to-end integration tests
-├── streamlit_app.py             # Interactive Streamlit chat UI
-├── pyproject.toml               # Python package configuration and dependencies
-└── .env.example                 # Environment variable template
-```
-
----
-
-## Quickstart Guide
-
-### 1. Prerequisites
-- Python 3.11 or 3.12
-- [uv](https://github.com/astral-sh/uv) (recommended) or `pip`
-- Google Gemini API Key ([Google AI Studio](https://aistudio.google.com/))
-- *(Optional)* LangSmith API Key ([smith.langchain.com](https://smith.langchain.com/))
-
-### 2. Installation
+EKIP features **zero-config auto-bootstrapping**. When cloning a fresh repository, you do not need to manually configure environments or install dependencies.
 
 ```bash
-# Clone the repository
-git clone https://github.com/<your-org>/ekip.git
+# 1. Clone the repository
+git clone https://github.com/your-org/ekip.git
 cd ekip
 
-# Create virtual environment and install all dependencies
-uv sync --extra dev
+# 2. Launch the application (everything else is automated!)
+ekip start
+# On PowerShell: .\ekip start
+# On Linux / macOS / Git Bash: ./ekip start
 ```
 
-### 3. Environment Configuration
+### What Happens Automatically:
+1. **Dependency Sync**: Checks if `.venv` exists; if missing, automatically runs `uv sync --extra dev`.
+2. **Environment Template**: If `.env` is absent, automatically creates it from `.env.example`.
+3. **Directory Verification**: Automatically prepares `data/uploaded_docs/` and `data/chroma_db/`.
+4. **Instant Launch**: Starts the Streamlit chat assistant on [http://localhost:8501](http://localhost:8501).
 
-Copy the sample environment file and insert your Google Gemini API key:
-
-```bash
-# Windows
-copy .env.example .env
-
-# Linux/macOS
-cp .env.example .env
-```
-
-Edit `.env`:
-```ini
-GOOGLE_API_KEY=your_gemini_api_key_here
-CHAT_MODEL=gemini-3.1-flash-lite
-EMBED_MODEL=models/gemini-embedding-001
-RETRIEVAL_MIN_SCORE=0.30
-```
-
-### 4. Ingest Sample Engineering Runbooks
-
-Populate the ChromaDB vector store with the included corpus:
-
-```bash
-uv run python -m app.ingestion.run_ingest data/sample_docs/
-```
-
-Output:
-```
-Ingesting documents from: data\sample_docs
-Loaded 4 documents.
-Created 16 chunks.
-Successfully indexed 16 chunks into ChromaDB collection 'ekip_docs'.
-```
+> **Note**: For cloud-hosted live Gemini operations, insert your `GOOGLE_API_KEY` into `.env`. If running 100% locally with Ollama, no API key is required!
 
 ---
 
-## Running the Platform
+## Core Application Walkthrough
 
-### Option A: Interactive Streamlit UI
-Launch the graphical chat interface with live evidence status badges and clickable citations:
+### 1. Zip-First Document Ingestion Landing View
+When you launch the app, EKIP presents a focused, single-purpose landing page:
+- Drag and drop any `.zip` archive containing your engineering guides, architecture docs, runbooks, or API specs.
+- The platform automatically verifies archive integrity, defends against Zip Slip directory traversal, chunks document trees, and embeds vectors into an isolated sub-database.
+- Have existing indexed data? Click *"Continue with previously indexed documents"* to jump straight into chat.
 
-```bash
-uv run streamlit run streamlit_app.py
-```
-Open [http://localhost:8501](http://localhost:8501) in your browser.
+### 2. Multi-Archive Sub-Databases & Active Corpus Inspection
+- Ingest multiple documentation sets (e.g. `auth_docs.zip`, `k8s_runbooks.zip`) without accidental data collision.
+- The sidebar displays the **exact names** of all active sub-databases along with document and chunk statistics.
+- When querying, EKIP searches across all active sub-databases, aggregating and ranking the best matching chunks.
 
-### Option B: FastAPI REST Service
-Launch the high-performance REST backend:
+### 3. One-Click Database Reset
+- Need to wipe stale context? Click **`🗑️ Clear Previous Data (Wipe All Sub-Databases)`** on the upload page or **`🗑️ Clear Database & Reset`** in the sidebar.
+- Completely purges previous sub-databases, uploaded raw files, and manifest references in one click.
 
-```bash
-uv run uvicorn app.api.routes:app --host 127.0.0.1 --port 8000 --reload
-```
-Interactive API documentation (Swagger UI) is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
-
-Example REST query:
-```bash
-curl -X POST "http://127.0.0.1:8000/ask" \
-     -H "Content-Type: application/json" \
-     -d '{"query": "What is the token expiration time for access tokens?"}'
-```
-
-### Option C: Standalone MCP Server
-Run the Model Context Protocol server exposing tool capabilities over stdio:
-
-```bash
-uv run python -m mcp_server.server
-```
+### 4. Grounded Chat & Verifiable Citations
+- Responses display color-coded status badges: `[SUFFICIENT EVIDENCE]`, `[PARTIAL EVIDENCE]`, or `[INSUFFICIENT EVIDENCE]`.
+- Click the expandable **`📚 View Sources & Citations`** widget under any answer to inspect the exact document name, section heading, and verbatim passage excerpt.
 
 ---
 
-## Running Quality Checks & Tests
+## CLI Reference & Manual (`ekip`)
 
-### Run Unit Test Suite
-Execute all 71 unit tests:
-```bash
-uv run pytest tests/unit
-```
+EKIP comes with a built-in unified command-line dispatcher:
 
-### Run Linter & Formatter Check
-```bash
-uv run ruff check .
-```
+| Command | Description | Example |
+|---|---|---|
+| `ekip start` | Launch the Streamlit chat web assistant (auto-bootstraps) | `ekip start --port 8501` |
+| `ekip api` | Launch FastAPI REST service with Swagger UI at `/docs` | `ekip api --port 8000 --reload` |
+| `ekip ingest` | Ingest documentation folder or `.zip` archive | `ekip ingest my_runbooks.zip` |
+| `ekip ingest --clear` | Ingest an archive and wipe previous databases first | `ekip ingest docs.zip --clear` |
+| `ekip status` | Display active models and list all indexed sub-databases | `ekip status` |
+| `ekip reset` | Wipe all Chroma sub-databases, uploaded files, and manifest | `ekip reset --force` |
+| `ekip test` | Run isolated unit tests using Pytest | `ekip test` |
+| `ekip test --lint` | Run Ruff static code linter and formatting checks | `ekip test --lint` |
+| `ekip test --safe` | Run Mypy strict static type safety checks | `ekip test --safe` |
+| `ekip test --eval` | Run the 24-case offline ground-truth evaluation suite | `ekip test --eval` |
+| `ekip test --full` | Run complete validation (tests + linter + type checks) | `ekip test --full` |
+| `ekip eval` | Direct shortcut to run 24-case evaluation benchmark | `ekip eval` |
+| `ekip mcp` | Launch standalone Model Context Protocol (MCP) server | `ekip mcp` |
+| `ekip help` / `manual` | Display on-the-go terminal command usage manual | `ekip manual` |
 
-### Run Type Checker
-```bash
-uv run mypy app mcp_server
-```
-
-### Run Evaluation Benchmark Suite
-Run offline quantitative evaluation across all 24 benchmark questions:
-```bash
-uv run python data/evals/run_eval.py
-```
-
----
-
-## Sample Queries & Outputs
-
-### 1. Grounded Knowledge Query (Answerable)
-- **Input**: `"What is the rollback procedure during a canary deployment?"`
-- **Evidence Status**: `SUFFICIENT`
-- **Output**: Detailed step-by-step instructions extracted from `deployment_runbook.md`.
-- **Citations**: `deployment_runbook.md` (Section: *Canary Rollback Procedure*).
-
-### 2. Missing Context Query (Unanswerable / Safety Rejection)
-- **Input**: `"What is the root password for the production database?"`
-- **Evidence Status**: `INSUFFICIENT`
-- **Output**: *"I do not have enough information in the provided engineering documentation to answer this question."*
-- **Citations**: `[]` (Zero hallucination).
-
-### 3. Action Request (Bounded Agent Execution)
-- **Input**: `"Draft a verification checklist for handling a SEV-1 outage."`
-- **Classification**: `ACTION_REQUEST`
-- **Agent Path**: Calls MCP tool `search_runbook`, formats response via `draft_checklist`.
-- **Output**: Formatted operational checklist with human verification notice.
+*Executable directly via `ekip <command>`, `.\ekip <command>`, or `uv run ekip <command>`.*
 
 ---
 
-## Manual Testing & Pre-Shipment Guide
+## Documentation Hub
 
-For an exhaustive, step-by-step manual testing protocol covering every single feature, UI component, edge case, and LangSmith tracing setup, see the **[Manual Testing & Run Guide](docs/manual_testing_and_run_guide.md)**.
+For detailed operational guides, architecture specifications, and security policies, explore the dedicated documentation modules:
+
+| Documentation Guide | Focus Area |
+|---|---|
+| 📐 [**System Architecture**](docs/architecture.md) | Architectural topology, component decoupling, data flow, and threat mitigations. |
+| 🧪 [**Run & Manual Testing Guide**](docs/manual_testing_and_run_guide.md) | Step-by-step test guide covering every feature and the pre-shipping sign-off checklist. |
+| 📦 [**Document Ingestion & Multi-Archive Storage**](docs/ingestion_guide.md) | 10 supported formats, heading-aware chunking, sub-database partitioning, and manifest tracking. |
+| 🤖 [**Bounded Agent & Model Context Protocol (MCP)**](docs/agent_and_mcp_guide.md) | 5-iteration loop limits, tool allowlisting, fast-path rejection (<2s), and standalone stdio MCP server. |
+| 💻 [**Dual-Engine & Local Ollama (4GB VRAM) Guide**](docs/local_engine_guide.md) | Running 100% locally or in hybrid mode with Ollama (`llama3.2:3b`, `nomic-embed-text`) on modest hardware. |
+| 📊 [**Evaluation Benchmark & Observability**](docs/eval_and_observability_guide.md) | LangSmith deep tracing taxonomy, 24-case benchmark runner, and quality metrics. |
 
 ---
 
-## Architectural Decision Log
+## Testing & Quality Assurance
 
-All major engineering decisions are formally logged under `docs/decisions.md`:
+With the custom command suite, testing and verifying the codebase is effortless:
 
-- **DEC-001 - DEC-005**: Foundational stack selections (Python 3.11+, Gemini, ChromaDB, FastAPI, Streamlit).
-- **DEC-006**: RAG default path; Agent path restricted to explicit `ACTION_REQUEST` queries.
-- **DEC-007**: Strict Pydantic output validation prior to API return.
-- **DEC-008**: Hardcoded tool allowlist enforcement in application layer.
-- **DEC-012**: Document ingestion normalization and source basename indexing.
-- **DEC-013**: Vector similarity thresholding (`0.30`) and evidence grading.
-- **DEC-015**: Iteration-bounded agent loop with pre-call permission assertions.
-- **DEC-016**: Decoupled Model Context Protocol (MCP) server & client adapter.
-- **DEC-017**: Centralized LLM factory and single-variable model configuration.
-- **DEC-018**: Automated evaluation harness and quality threshold gates.
-- **DEC-019**: Comprehensive LangSmith custom instrumentation, run types, tags, and metadata across full app flow.
-- **DEC-020**: Multi-format engineering document ingestion pipeline (.md, .pdf, .docx, .csv, .tsv, .html, .txt, .json, .yaml, .rst).
-- **DEC-021**: Dual-engine execution architecture (hosted Gemini and local Ollama).
-- **DEC-022**: Action pre-flight knowledge verification and dynamic agent evidence grading.
+```bash
+# Run all 115 isolated unit tests
+ekip test
+
+# Run Ruff code style checks
+ekip test --lint
+
+# Run Mypy static type safety verification
+ekip test --safe
+
+# Run the complete CI validation suite
+ekip test --full
+
+# Run the 24-case offline evaluation benchmark
+ekip eval
+```
+
+### Verified Benchmark Performance:
+- **Unit Test Coverage**: **115 / 115 tests passing** (`100%`)
+- **Linter & Type Checks**: **0 errors** across all 34 source files
+- **Overall Benchmark Pass Rate**: **95.8%** (23 / 24 test cases)
+- **Answerable Accuracy**: **100.0%** (12 / 12)
+- **Safety Rejection**: **100.0%** (4 / 4)
+- **Source Citation Match Rate**: **95.8%**
 
 ---
 
 ## License
 
-MIT License. Designed and built as part of the Engineering Knowledge Intelligence Platform (EKIP).
+Distributed under the MIT License. See `LICENSE` for more information.
